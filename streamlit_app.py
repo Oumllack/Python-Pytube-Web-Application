@@ -1,10 +1,9 @@
 import streamlit as st
-import yt_dlp
+from pytube import YouTube
 import os
 from datetime import timedelta
 import re
 import time
-import random
 
 # Page configuration
 st.set_page_config(
@@ -48,120 +47,18 @@ with st.sidebar:
     """)
     st.markdown("---")
     st.markdown("### Made with ❤️")
-    st.markdown("Streamlit • yt-dlp")
+    st.markdown("Streamlit • Pytube")
 
 def is_valid_youtube_url(url):
     youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
     return bool(re.match(youtube_regex, url))
 
 def get_video_info(url):
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': True,
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-        },
-        'socket_timeout': 30,
-        'retries': 10,
-        'fragment_retries': 10,
-        'skip_download': True,
-    }
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(url, download=False)
-            if not info:
-                raise Exception("Could not extract video information")
-            return info
-        except Exception as e:
-            raise Exception(f"Error getting video info: {str(e)}")
-
-def download_video(url, format_type, quality=None):
-    if format_type == 'audio':
-        format_str = 'bestaudio/best'
-    else:
-        format_str = f'bestvideo[height<={quality}]+bestaudio/best[height<={quality}]' if quality else 'best'
-
-    ydl_opts = {
-        'format': format_str,
-        'quiet': True,
-        'no_warnings': True,
-        'outtmpl': '%(title)s.%(ext)s',
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-        },
-        'socket_timeout': 30,
-        'retries': 10,
-        'fragment_retries': 10,
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }] if format_type == 'video' else [],
-        'merge_output_format': 'mp4' if format_type == 'video' else None,
-        'prefer_insecure': True,
-        'allow_unplayable_formats': True,
-        'extract_flat_playlist': True,
-        'ignore_no_formats_error': True,
-        'no_playlist': True,
-        'no_check_certificate': True,
-        'prefer_ffmpeg': True,
-        'keepvideo': False,
-        'writethumbnail': False,
-        'writeautomaticsub': False,
-        'writesubtitles': False,
-        'write_all_thumbnails': False,
-        'skip_unavailable_fragments': True,
-        'skip_download_archive': True,
-        'overwrites': True,
-        'no_warnings': True,
-        'quiet': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
-        'geo_bypass_country': 'US',
-    }
-    
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
-            info = ydl.extract_info(url, download=True)
-            if not info:
-                raise Exception("Could not download video")
-            
-            # Get the downloaded file path
-            if format_type == 'audio':
-                # For audio, the file is already downloaded with the correct extension
-                return f"{info['title']}.{info['ext']}"
-            else:
-                # For video, we need to find the mp4 file
-                base_name = info['title']
-                for file in os.listdir('.'):
-                    if file.startswith(base_name) and file.endswith('.mp4'):
-                        return file
-                
-                raise Exception("Could not find downloaded video file")
-        except Exception as e:
-            raise Exception(f"Error downloading video: {str(e)}")
+    try:
+        yt = YouTube(url)
+        return yt
+    except Exception as e:
+        raise Exception(f"Error getting video info: {str(e)}")
 
 # Main function
 def main():
@@ -178,19 +75,19 @@ def main():
 
         try:
             with st.spinner("Connecting to YouTube..."):
-                info = get_video_info(url)
+                yt = get_video_info(url)
                 
                 # Display video information
                 col1, col2 = st.columns([1, 2])
                 
                 with col1:
-                    st.image(info.get('thumbnail', ''), width=300)
+                    st.image(yt.thumbnail_url, width=300)
                 
                 with col2:
-                    st.subheader(info.get('title', 'Unknown Title'))
-                    st.markdown(f"**Author:** {info.get('uploader', 'Unknown')}")
-                    st.markdown(f"**Duration:** {timedelta(seconds=info.get('duration', 0))}")
-                    st.markdown(f"**Views:** {info.get('view_count', 0):,}")
+                    st.subheader(yt.title)
+                    st.markdown(f"**Author:** {yt.author}")
+                    st.markdown(f"**Duration:** {timedelta(seconds=yt.length)}")
+                    st.markdown(f"**Views:** {yt.views:,}")
                     
                     # Download options
                     st.markdown("### Download Options")
@@ -201,18 +98,28 @@ def main():
                     
                     if download_type == "Video":
                         # Quality selection
-                        quality = st.selectbox(
+                        streams = yt.streams.filter(progressive=True)
+                        if not streams:
+                            st.error("No video streams available for this video")
+                            return
+                            
+                        quality_options = {f"{s.resolution} ({s.filesize_mb:.1f} MB)": s for s in streams}
+                        selected_quality = st.selectbox(
                             "Choose quality:",
-                            ["720p", "480p", "360p", "240p", "144p"]
+                            options=list(quality_options.keys())
                         )
-                        quality = int(quality.replace('p', ''))
+                        stream = quality_options[selected_quality]
                     else:
-                        quality = None
+                        # Audio download
+                        stream = yt.streams.get_audio_only()
+                        if not stream:
+                            st.error("No audio stream available for this video")
+                            return
                     
                     if st.button("Download"):
                         try:
                             with st.spinner("Downloading..."):
-                                download_path = download_video(url, download_type.lower(), quality)
+                                download_path = stream.download()
                                 st.success("Download complete!")
                                 
                                 # Download button
