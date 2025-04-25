@@ -6,6 +6,8 @@ import tempfile
 import shutil
 import time
 import random
+import requests
+from urllib.parse import urlparse
 
 # Configuration de la page
 st.set_page_config(
@@ -63,6 +65,21 @@ with st.sidebar:
     st.markdown("### Développé avec ❤️")
     st.markdown("Streamlit • yt-dlp")
 
+# Liste de User-Agents
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
+]
+
+# Liste de proxies publics (à utiliser avec précaution)
+PROXIES = [
+    'http://proxy1.example.com:8080',
+    'http://proxy2.example.com:8080',
+    'http://proxy3.example.com:8080',
+]
+
 # Fonction de progression
 def progress_hook(d):
     if d['status'] == 'downloading':
@@ -72,10 +89,25 @@ def progress_hook(d):
     elif d['status'] == 'finished':
         st.success("Téléchargement terminé!")
 
+# Fonction pour vérifier si une URL est valide
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
 # Fonction pour obtenir les informations de la vidéo avec retry
 def get_video_info(url, max_retries=3):
+    if not is_valid_url(url):
+        st.error("URL invalide. Veuillez entrer une URL YouTube valide.")
+        return None
+
     for attempt in range(max_retries):
         try:
+            # Sélection aléatoire d'un User-Agent
+            user_agent = random.choice(USER_AGENTS)
+            
             ydl_opts = {
                 'format': 'best',
                 'quiet': True,
@@ -88,12 +120,20 @@ def get_video_info(url, max_retries=3):
                 'geo_bypass': True,
                 'geo_verification_proxy': None,
                 'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'User-Agent': user_agent,
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Accept-Language': 'en-us,en;q=0.5',
                     'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Upgrade-Insecure-Requests': '1',
                 }
             }
+            
+            # Ajout d'un proxy aléatoire si disponible
+            if PROXIES:
+                proxy = random.choice(PROXIES)
+                ydl_opts['proxy'] = proxy
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -170,6 +210,9 @@ def main():
                         try:
                             # Création d'un dossier temporaire
                             with tempfile.TemporaryDirectory() as temp_dir:
+                                # Sélection aléatoire d'un User-Agent
+                                user_agent = random.choice(USER_AGENTS)
+                                
                                 ydl_opts = {
                                     'format': format_id,
                                     'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
@@ -182,12 +225,20 @@ def main():
                                     'geo_bypass': True,
                                     'geo_verification_proxy': None,
                                     'http_headers': {
-                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                                        'User-Agent': user_agent,
                                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                                         'Accept-Language': 'en-us,en;q=0.5',
                                         'Sec-Fetch-Mode': 'navigate',
+                                        'Sec-Fetch-Site': 'none',
+                                        'Sec-Fetch-User': '?1',
+                                        'Upgrade-Insecure-Requests': '1',
                                     }
                                 }
+                                
+                                # Ajout d'un proxy aléatoire si disponible
+                                if PROXIES:
+                                    proxy = random.choice(PROXIES)
+                                    ydl_opts['proxy'] = proxy
                                 
                                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                                     ydl.download([url])
@@ -229,6 +280,7 @@ def main():
               * Utiliser un VPN
               * Attendre quelques minutes avant de réessayer
               * Essayer une autre URL de la même vidéo
+              * Désactiver temporairement votre pare-feu
             """)
 
 if __name__ == "__main__":
