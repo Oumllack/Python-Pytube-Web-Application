@@ -1,9 +1,10 @@
 import streamlit as st
-import youtube_dl
+import yt_dlp
 import os
 from datetime import datetime
 import re
 import time
+import random
 
 # Page configuration
 st.set_page_config(
@@ -47,7 +48,7 @@ with st.sidebar:
     """)
     st.markdown("---")
     st.markdown("### Made with ❤️")
-    st.markdown("Streamlit • youtube-dl")
+    st.markdown("Streamlit • yt-dlp")
 
 def is_valid_youtube_url(url):
     youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
@@ -58,11 +59,31 @@ def get_video_info(url):
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        },
+        'cookiesfrombrowser': ('chrome',),
+        'socket_timeout': 30,
+        'retries': 10,
+        'fragment_retries': 10,
+        'skip_download': True,
     }
     
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(url, download=False)
+            if not info:
+                raise Exception("Could not extract video information")
             return info
         except Exception as e:
             raise Exception(f"Error getting video info: {str(e)}")
@@ -73,11 +94,30 @@ def download_video(url, format_type, quality=None):
         'quiet': True,
         'no_warnings': True,
         'outtmpl': '%(title)s.%(ext)s',
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        },
+        'cookiesfrombrowser': ('chrome',),
+        'socket_timeout': 30,
+        'retries': 10,
+        'fragment_retries': 10,
     }
     
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(url, download=True)
+            if not info:
+                raise Exception("Could not download video")
             return f"{info['title']}.{info['ext']}"
         except Exception as e:
             raise Exception(f"Error downloading video: {str(e)}")
