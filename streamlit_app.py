@@ -3,6 +3,7 @@ from pytube import YouTube
 import os
 from datetime import datetime
 import re
+import time
 
 # Page configuration
 st.set_page_config(
@@ -52,6 +53,21 @@ def is_valid_youtube_url(url):
     youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
     return bool(re.match(youtube_regex, url))
 
+def get_video_info(url, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            yt = YouTube(
+                url,
+                use_oauth=False,
+                allow_oauth_cache=True
+            )
+            return yt
+        except Exception as e:
+            if attempt < max_retries - 1:
+                time.sleep(2)  # Wait 2 seconds before retrying
+                continue
+            raise e
+
 # Main function
 def main():
     st.title("🎥 YouTube Downloader")
@@ -67,7 +83,7 @@ def main():
 
         try:
             with st.spinner("Connecting to YouTube..."):
-                yt = YouTube(url)
+                yt = get_video_info(url)
                 
                 # Display video information
                 col1, col2 = st.columns([1, 2])
