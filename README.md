@@ -1,46 +1,46 @@
 # YouTube Downloader Web App
 
-Une application web moderne pour télécharger des vidéos YouTube, construite avec Streamlit et Pytube.
+A modern web application for downloading YouTube videos, built with Streamlit and Pytube.
 
-## Fonctionnalités
+## Features
 
-- Téléchargement de vidéos YouTube
-- Choix de la qualité de la vidéo
-- Téléchargement audio uniquement
-- Interface utilisateur moderne et intuitive
-- Affichage des informations détaillées de la vidéo
+- YouTube video downloading
+- Video quality selection
+- Audio-only downloading
+- Modern and intuitive user interface
+- Detailed video information display
 
 ## Installation
 
-1. Clonez le dépôt :
+1. Clone the repository:
 ```bash
-git clone https://github.com/votre-username/youtube-downloader.git
-cd youtube-downloader
+git clone https://github.com/Oumllack/Python-Pytube-Web-Application.git
+cd Python-Pytube-Web-Application
 ```
 
-2. Installez les dépendances :
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Lancez l'application :
+3. Launch the application:
 ```bash
 ./run.sh
 ```
 
-## Utilisation
+## Usage
 
-1. Collez l'URL de la vidéo YouTube
-2. Choisissez le type de téléchargement (vidéo ou audio)
-3. Sélectionnez la qualité souhaitée
-4. Cliquez sur "Télécharger"
+1. Paste the YouTube video URL
+2. Choose the download type (video or audio)
+3. Select the desired quality
+4. Click "Download"
 
-## Technologies utilisées
+## Technologies Used
 
 - Python
 - Streamlit
 - Pytube
 
-## Licence
+## License
 
 MIT 
