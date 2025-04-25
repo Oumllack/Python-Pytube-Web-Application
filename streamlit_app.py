@@ -72,11 +72,11 @@ def get_video_info(url):
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         },
-        'cookiesfrombrowser': ('chrome',),
         'socket_timeout': 30,
         'retries': 10,
         'fragment_retries': 10,
         'skip_download': True,
+        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -107,10 +107,10 @@ def download_video(url, format_type, quality=None):
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         },
-        'cookiesfrombrowser': ('chrome',),
         'socket_timeout': 30,
         'retries': 10,
         'fragment_retries': 10,
+        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
