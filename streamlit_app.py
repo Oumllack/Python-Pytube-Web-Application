@@ -56,11 +56,7 @@ def is_valid_youtube_url(url):
 def get_video_info(url):
     try:
         # Add custom headers
-        yt = YouTube(
-            url,
-            use_oauth=False,
-            allow_oauth_cache=True
-        )
+        yt = YouTube(url)
         
         # Set custom headers
         yt.headers = {
