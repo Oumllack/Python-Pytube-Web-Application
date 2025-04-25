@@ -76,39 +76,6 @@ def get_video_info(url):
         'retries': 10,
         'fragment_retries': 10,
         'skip_download': True,
-        'extractor_args': {
-            'youtube': {
-                'skip': ['dash', 'hls'],
-                'player_skip': ['js', 'configs', 'webpage'],
-            }
-        },
-        'format': 'best',
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }],
-        'merge_output_format': 'mp4',
-        'prefer_insecure': True,
-        'allow_unplayable_formats': True,
-        'extract_flat_playlist': True,
-        'ignore_no_formats_error': True,
-        'no_playlist': True,
-        'no_check_certificate': True,
-        'prefer_ffmpeg': True,
-        'keepvideo': False,
-        'writethumbnail': False,
-        'writeautomaticsub': False,
-        'writesubtitles': False,
-        'write_all_thumbnails': False,
-        'skip_unavailable_fragments': True,
-        'skip_download_archive': True,
-        'overwrites': True,
-        'no_warnings': True,
-        'quiet': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
-        'geo_bypass_country': 'US',
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -121,8 +88,13 @@ def get_video_info(url):
             raise Exception(f"Error getting video info: {str(e)}")
 
 def download_video(url, format_type, quality=None):
+    if format_type == 'audio':
+        format_str = 'bestaudio/best'
+    else:
+        format_str = f'bestvideo[height<={quality}]+bestaudio/best[height<={quality}]' if quality else 'best'
+
     ydl_opts = {
-        'format': 'best' if format_type == 'audio' else f'bestvideo[height<={quality}]+bestaudio/best[height<={quality}]' if quality else 'best',
+        'format': format_str,
         'quiet': True,
         'no_warnings': True,
         'outtmpl': '%(title)s.%(ext)s',
@@ -142,17 +114,11 @@ def download_video(url, format_type, quality=None):
         'socket_timeout': 30,
         'retries': 10,
         'fragment_retries': 10,
-        'extractor_args': {
-            'youtube': {
-                'skip': ['dash', 'hls'],
-                'player_skip': ['js', 'configs', 'webpage'],
-            }
-        },
         'postprocessors': [{
             'key': 'FFmpegVideoConvertor',
             'preferedformat': 'mp4',
-        }],
-        'merge_output_format': 'mp4',
+        }] if format_type == 'video' else [],
+        'merge_output_format': 'mp4' if format_type == 'video' else None,
         'prefer_insecure': True,
         'allow_unplayable_formats': True,
         'extract_flat_playlist': True,
@@ -181,7 +147,19 @@ def download_video(url, format_type, quality=None):
             info = ydl.extract_info(url, download=True)
             if not info:
                 raise Exception("Could not download video")
-            return f"{info['title']}.{info['ext']}"
+            
+            # Get the downloaded file path
+            if format_type == 'audio':
+                # For audio, the file is already downloaded with the correct extension
+                return f"{info['title']}.{info['ext']}"
+            else:
+                # For video, we need to find the mp4 file
+                base_name = info['title']
+                for file in os.listdir('.'):
+                    if file.startswith(base_name) and file.endswith('.mp4'):
+                        return file
+                
+                raise Exception("Could not find downloaded video file")
         except Exception as e:
             raise Exception(f"Error downloading video: {str(e)}")
 
