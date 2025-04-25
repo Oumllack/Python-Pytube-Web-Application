@@ -76,7 +76,13 @@ def get_video_info(url):
         'retries': 10,
         'fragment_retries': 10,
         'skip_download': True,
-        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
+        'proxy': 'http://51.159.115.233:3128',  # Public proxy
+        'extractor_args': {
+            'youtube': {
+                'skip': ['dash', 'hls'],
+                'player_skip': ['js', 'configs', 'webpage'],
+            }
+        }
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -110,7 +116,13 @@ def download_video(url, format_type, quality=None):
         'socket_timeout': 30,
         'retries': 10,
         'fragment_retries': 10,
-        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
+        'proxy': 'http://51.159.115.233:3128',  # Public proxy
+        'extractor_args': {
+            'youtube': {
+                'skip': ['dash', 'hls'],
+                'player_skip': ['js', 'configs', 'webpage'],
+            }
+        }
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
