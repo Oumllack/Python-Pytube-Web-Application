@@ -59,7 +59,6 @@ def get_video_info(url):
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
-        'cookiesfrombrowser': ('chrome',),  # Use Chrome cookies
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -72,12 +71,19 @@ def get_video_info(url):
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
             'DNT': '1',
-        }
+        },
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(url, download=False)
+            if not info:
+                raise Exception("Could not extract video information")
             return info
         except Exception as e:
             raise Exception(f"Error getting video info: {str(e)}")
@@ -88,7 +94,6 @@ def download_video(url, format_type, quality=None):
         'quiet': True,
         'no_warnings': True,
         'outtmpl': '%(title)s.%(ext)s',
-        'cookiesfrombrowser': ('chrome',),  # Use Chrome cookies
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -101,12 +106,19 @@ def download_video(url, format_type, quality=None):
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1',
             'DNT': '1',
-        }
+        },
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             info = ydl.extract_info(url, download=True)
+            if not info:
+                raise Exception("Could not download video")
             return f"{info['title']}.{info['ext']}"
         except Exception as e:
             raise Exception(f"Error downloading video: {str(e)}")
