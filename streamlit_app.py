@@ -55,21 +55,14 @@ def is_valid_youtube_url(url):
 
 def get_video_info(url):
     try:
-        # Add custom headers
+        # Add a small delay before connecting
+        time.sleep(2)
+        
+        # Create YouTube object
         yt = YouTube(url)
         
-        # Set custom headers
-        yt.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-        }
-        
-        # Add a small delay
-        time.sleep(2)
+        # Add a small delay after connecting
+        time.sleep(1)
         
         return yt
     except Exception as e:
