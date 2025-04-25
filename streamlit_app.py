@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 import re
 import time
+import random
 
 # Page configuration
 st.set_page_config(
@@ -56,15 +57,32 @@ def is_valid_youtube_url(url):
 def get_video_info(url, max_retries=3):
     for attempt in range(max_retries):
         try:
+            # Custom headers to mimic a browser
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+            
             yt = YouTube(
                 url,
                 use_oauth=False,
                 allow_oauth_cache=True
             )
+            
+            # Set custom headers
+            yt.headers = headers
+            
+            # Add a small random delay
+            time.sleep(random.uniform(1, 3))
+            
             return yt
         except Exception as e:
             if attempt < max_retries - 1:
-                time.sleep(2)  # Wait 2 seconds before retrying
+                st.warning(f"Attempt {attempt + 1} failed, retrying...")
+                time.sleep(3)  # Wait 3 seconds before retrying
                 continue
             raise e
 
