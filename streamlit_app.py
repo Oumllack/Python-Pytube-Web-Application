@@ -1,7 +1,7 @@
 import streamlit as st
 import yt_dlp
 import os
-from datetime import datetime
+from datetime import timedelta
 import re
 import time
 import random
@@ -109,40 +109,6 @@ def get_video_info(url):
         'geo_bypass': True,
         'geo_verification_proxy': None,
         'geo_bypass_country': 'US',
-        'geo_bypass_ip_block': None,
-        'geo_bypass_region': None,
-        'geo_bypass_city': None,
-        'geo_bypass_continent': None,
-        'geo_bypass_country_code': None,
-        'geo_bypass_country_name': None,
-        'geo_bypass_country_iso': None,
-        'geo_bypass_country_iso3': None,
-        'geo_bypass_country_iso_numeric': None,
-        'geo_bypass_country_capital': None,
-        'geo_bypass_country_currency': None,
-        'geo_bypass_country_currency_code': None,
-        'geo_bypass_country_currency_symbol': None,
-        'geo_bypass_country_currency_name': None,
-        'geo_bypass_country_currency_plural': None,
-        'geo_bypass_country_currency_symbol_native': None,
-        'geo_bypass_country_currency_decimal_mark': None,
-        'geo_bypass_country_currency_thousands_separator': None,
-        'geo_bypass_country_currency_subunit': None,
-        'geo_bypass_country_currency_subunit_to_unit': None,
-        'geo_bypass_country_currency_smallest_denomination': None,
-        'geo_bypass_country_currency_iso': None,
-        'geo_bypass_country_currency_iso_numeric': None,
-        'geo_bypass_country_currency_iso_alpha': None,
-        'geo_bypass_country_currency_iso_alpha3': None,
-        'geo_bypass_country_currency_iso_alpha_numeric': None,
-        'geo_bypass_country_currency_iso_alpha_numeric3': None,
-        'geo_bypass_country_currency_iso_alpha_numeric4': None,
-        'geo_bypass_country_currency_iso_alpha_numeric5': None,
-        'geo_bypass_country_currency_iso_alpha_numeric6': None,
-        'geo_bypass_country_currency_iso_alpha_numeric7': None,
-        'geo_bypass_country_currency_iso_alpha_numeric8': None,
-        'geo_bypass_country_currency_iso_alpha_numeric9': None,
-        'geo_bypass_country_currency_iso_alpha_numeric10': None,
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -245,7 +211,7 @@ def main():
                 with col2:
                     st.subheader(info.get('title', 'Unknown Title'))
                     st.markdown(f"**Author:** {info.get('uploader', 'Unknown')}")
-                    st.markdown(f"**Duration:** {datetime.timedelta(seconds=info.get('duration', 0))}")
+                    st.markdown(f"**Duration:** {timedelta(seconds=info.get('duration', 0))}")
                     st.markdown(f"**Views:** {info.get('view_count', 0):,}")
                     
                     # Download options
