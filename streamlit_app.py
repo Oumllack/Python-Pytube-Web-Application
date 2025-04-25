@@ -56,9 +56,20 @@ def is_valid_youtube_url(url):
 
 def get_video_info(url):
     ydl_opts = {
+        'format': 'best',
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
+        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
+        'socket_timeout': 30,
+        'retries': 10,
+        'fragment_retries': 10,
+        'skip_download': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -66,17 +77,7 @@ def get_video_info(url):
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'DNT': '1',
-        },
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
+        }
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -94,6 +95,15 @@ def download_video(url, format_type, quality=None):
         'quiet': True,
         'no_warnings': True,
         'outtmpl': '%(title)s.%(ext)s',
+        'proxy': 'socks5://127.0.0.1:9050',  # Using Tor proxy
+        'socket_timeout': 30,
+        'retries': 10,
+        'fragment_retries': 10,
+        'nocheckcertificate': True,
+        'ignoreerrors': True,
+        'no_color': True,
+        'geo_bypass': True,
+        'geo_verification_proxy': None,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -101,17 +111,7 @@ def download_video(url, format_type, quality=None):
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1',
-            'DNT': '1',
-        },
-        'nocheckcertificate': True,
-        'ignoreerrors': True,
-        'no_color': True,
-        'geo_bypass': True,
-        'geo_verification_proxy': None,
+        }
     }
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
