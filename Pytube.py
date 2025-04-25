@@ -1,9 +1,13 @@
 import streamlit as st
-from pytube3 import YouTube
 import os
 from datetime import datetime
 import tempfile
 import shutil
+import requests
+import json
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+import re
 
 # Configuration de la page
 st.set_page_config(
@@ -59,19 +63,63 @@ with st.sidebar:
     """)
     st.markdown("---")
     st.markdown("### Développé avec ❤️")
-    st.markdown("Streamlit • pytube3")
+    st.markdown("Streamlit • YouTube API")
 
-# Fonction de progression
-def progress_callback(stream, chunk, bytes_remaining):
-    total_size = stream.filesize
-    bytes_downloaded = total_size - bytes_remaining
-    percentage = (bytes_downloaded / total_size) * 100
-    st.progress(percentage / 100)
+# Fonction pour extraire l'ID de la vidéo
+def extract_video_id(url):
+    video_id = None
+    if 'youtube.com' in url:
+        video_id = re.search(r'v=([^&]+)', url)
+        if video_id:
+            return video_id.group(1)
+    elif 'youtu.be' in url:
+        video_id = re.search(r'youtu.be/([^?]+)', url)
+        if video_id:
+            return video_id.group(1)
+    return None
+
+# Fonction pour obtenir les informations de la vidéo
+def get_video_info(video_id, api_key):
+    try:
+        youtube = build('youtube', 'v3', developerKey=api_key)
+        request = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=video_id
+        )
+        response = request.execute()
+        
+        if not response['items']:
+            return None
+            
+        video_data = response['items'][0]
+        return {
+            'title': video_data['snippet']['title'],
+            'author': video_data['snippet']['channelTitle'],
+            'thumbnail': video_data['snippet']['thumbnails']['high']['url'],
+            'duration': video_data['contentDetails']['duration'],
+            'views': int(video_data['statistics']['viewCount'])
+        }
+    except HttpError as e:
+        st.error(f"Erreur API YouTube: {str(e)}")
+        return None
 
 # Fonction principale
 def main():
     st.title("🎥 YouTube Downloader")
     st.markdown("---")
+
+    # Configuration de l'API key
+    api_key = st.text_input("Entrez votre clé API YouTube:", type="password")
+    if not api_key:
+        st.warning("Veuillez entrer une clé API YouTube pour continuer.")
+        st.info("""
+        Pour obtenir une clé API YouTube :
+        1. Allez sur https://console.cloud.google.com/
+        2. Créez un nouveau projet
+        3. Activez l'API YouTube Data v3
+        4. Créez des identifiants (clé API)
+        """)
+        return
 
     # Configuration du dossier de téléchargement
     download_dir = st.text_input("Dossier de téléchargement (optionnel):", value=os.path.expanduser("~/Downloads"))
@@ -83,20 +131,28 @@ def main():
 
     if url:
         try:
-            # Création de l'objet YouTube avec le callback de progression
-            yt = YouTube(url, on_progress_callback=progress_callback)
-            
+            # Extraction de l'ID de la vidéo
+            video_id = extract_video_id(url)
+            if not video_id:
+                st.error("URL YouTube invalide. Veuillez entrer une URL valide.")
+                return
+
+            # Obtenir les informations de la vidéo
+            video_info = get_video_info(video_id, api_key)
+            if not video_info:
+                st.error("Impossible d'obtenir les informations de la vidéo. Vérifiez votre clé API et l'URL.")
+                return
+
             # Affichage des informations de la vidéo
             col1, col2 = st.columns([1, 2])
             
             with col1:
-                st.image(yt.thumbnail_url, width=300)
+                st.image(video_info['thumbnail'], width=300)
             
             with col2:
-                st.subheader(yt.title)
-                st.markdown(f"**Auteur:** {yt.author}")
-                st.markdown(f"**Durée:** {datetime.timedelta(seconds=yt.length)}")
-                st.markdown(f"**Vues:** {yt.views:,}")
+                st.subheader(video_info['title'])
+                st.markdown(f"**Auteur:** {video_info['author']}")
+                st.markdown(f"**Vues:** {video_info['views']:,}")
                 
                 # Options de téléchargement
                 st.markdown("### Options de téléchargement")
@@ -105,47 +161,17 @@ def main():
                     ["Vidéo", "Audio uniquement"]
                 )
                 
-                if download_type == "Vidéo":
-                    # Sélection de la qualité
-                    streams = yt.streams.filter(progressive=True)
-                    if not streams:
-                        st.warning("Aucun flux vidéo disponible. Essayez une autre vidéo.")
-                        return
-                    quality_options = {f"{s.resolution} ({s.filesize_mb:.1f} MB)": s for s in streams}
-                    selected_quality = st.selectbox(
-                        "Choisissez la qualité:",
-                        options=list(quality_options.keys())
-                    )
-                    stream = quality_options[selected_quality]
-                else:
-                    # Téléchargement audio
-                    stream = yt.streams.get_audio_only()
-                    if not stream:
-                        st.warning("Aucun flux audio disponible. Essayez une autre vidéo.")
-                        return
-                
                 if st.button("Télécharger"):
-                    with st.spinner("Téléchargement en cours..."):
-                        try:
-                            # Création d'un dossier temporaire
-                            with tempfile.TemporaryDirectory() as temp_dir:
-                                download_path = stream.download(output_path=temp_dir)
-                                st.success("Téléchargement terminé!")
-                                
-                                # Déplacement du fichier vers le dossier de téléchargement
-                                final_path = os.path.join(download_dir, os.path.basename(download_path))
-                                shutil.move(download_path, final_path)
-                                
-                                # Bouton de téléchargement
-                                with open(final_path, 'rb') as f:
-                                    st.download_button(
-                                        label="Cliquez ici pour télécharger",
-                                        data=f,
-                                        file_name=os.path.basename(final_path),
-                                        mime="video/mp4" if download_type == "Vidéo" else "audio/mp4"
-                                    )
-                        except Exception as e:
-                            st.error(f"Erreur lors du téléchargement: {str(e)}")
+                    st.warning("""
+                    ⚠️ Note importante :
+                    L'API YouTube ne permet pas directement le téléchargement de vidéos.
+                    Pour télécharger des vidéos YouTube, vous devez utiliser une bibliothèque tierce.
+                    
+                    Suggestions :
+                    1. Utilisez youtube-dl (en ligne de commande)
+                    2. Utilisez un service web de téléchargement
+                    3. Utilisez un navigateur avec une extension de téléchargement
+                    """)
         
         except Exception as e:
             st.error(f"Une erreur est survenue: {str(e)}")
@@ -153,13 +179,8 @@ def main():
             st.markdown("""
             - Vérifiez que l'URL est correcte
             - Assurez-vous que la vidéo est publique
-            - Vérifiez votre connexion internet
+            - Vérifiez votre clé API
             - Essayez une autre vidéo
-            - Si l'erreur persiste, essayez de :
-              * Vider le cache de votre navigateur
-              * Utiliser un VPN
-              * Attendre quelques minutes avant de réessayer
-              * Essayer une autre URL de la même vidéo
             """)
 
 if __name__ == "__main__":
