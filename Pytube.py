@@ -85,28 +85,45 @@ def main():
 
     if url:
         try:
-            # Configuration de yt-dlp
+            # Configuration de yt-dlp avec des options supplémentaires
             ydl_opts = {
                 'format': 'best',
                 'quiet': True,
                 'no_warnings': True,
                 'progress_hooks': [progress_hook],
+                'nocheckcertificate': True,
+                'ignoreerrors': True,
+                'no_color': True,
+                'extract_flat': False,
+                'force_generic_extractor': False,
+                'geo_bypass': True,
+                'geo_verification_proxy': None,
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-us,en;q=0.5',
+                    'Sec-Fetch-Mode': 'navigate',
+                }
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 # Obtenir les informations de la vidéo
                 info = ydl.extract_info(url, download=False)
                 
+                if not info:
+                    st.error("Impossible d'obtenir les informations de la vidéo. Vérifiez l'URL.")
+                    return
+                
                 # Affichage des informations de la vidéo
                 col1, col2 = st.columns([1, 2])
                 
                 with col1:
-                    st.image(info['thumbnail'], width=300)
+                    st.image(info.get('thumbnail', ''), width=300)
                 
                 with col2:
-                    st.subheader(info['title'])
-                    st.markdown(f"**Auteur:** {info['uploader']}")
-                    st.markdown(f"**Durée:** {datetime.timedelta(seconds=info['duration'])}")
+                    st.subheader(info.get('title', 'Titre non disponible'))
+                    st.markdown(f"**Auteur:** {info.get('uploader', 'Auteur inconnu')}")
+                    st.markdown(f"**Durée:** {datetime.timedelta(seconds=info.get('duration', 0))}")
                     st.markdown(f"**Vues:** {info.get('view_count', 'N/A'):,}")
                     
                     # Options de téléchargement
@@ -118,8 +135,11 @@ def main():
                     
                     if download_type == "Vidéo":
                         # Sélection de la qualité
-                        formats = [f for f in info['formats'] if f.get('vcodec', 'none') != 'none' and f.get('acodec', 'none') != 'none']
-                        quality_options = {f"{f['format_note']} ({f.get('filesize', 0) / 1024 / 1024:.1f} MB)": f['format_id'] for f in formats}
+                        formats = [f for f in info.get('formats', []) if f.get('vcodec', 'none') != 'none' and f.get('acodec', 'none') != 'none']
+                        if not formats:
+                            st.warning("Aucun format vidéo disponible. Essayez une autre vidéo.")
+                            return
+                        quality_options = {f"{f.get('format_note', 'Qualité inconnue')} ({f.get('filesize', 0) / 1024 / 1024:.1f} MB)": f['format_id'] for f in formats}
                         selected_quality = st.selectbox(
                             "Choisissez la qualité:",
                             options=list(quality_options.keys())
@@ -142,7 +162,12 @@ def main():
                                         ydl.download([url])
                                     
                                     # Trouver le fichier téléchargé
-                                    downloaded_file = os.listdir(temp_dir)[0]
+                                    downloaded_files = os.listdir(temp_dir)
+                                    if not downloaded_files:
+                                        st.error("Aucun fichier n'a été téléchargé. Vérifiez l'URL et réessayez.")
+                                        return
+                                    
+                                    downloaded_file = downloaded_files[0]
                                     download_path = os.path.join(temp_dir, downloaded_file)
                                     
                                     # Déplacement du fichier vers le dossier de téléchargement
@@ -168,6 +193,10 @@ def main():
             - Assurez-vous que la vidéo est publique
             - Vérifiez votre connexion internet
             - Essayez une autre vidéo
+            - Si l'erreur persiste, essayez de :
+              * Vider le cache de votre navigateur
+              * Utiliser un VPN
+              * Attendre quelques minutes avant de réessayer
             """)
 
 if __name__ == "__main__":
