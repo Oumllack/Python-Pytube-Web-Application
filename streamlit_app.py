@@ -1,5 +1,5 @@
 import streamlit as st
-from pytube import YouTube
+import yt_dlp
 import os
 from datetime import datetime
 import re
@@ -48,43 +48,40 @@ with st.sidebar:
     """)
     st.markdown("---")
     st.markdown("### Made with ❤️")
-    st.markdown("Streamlit • Pytube")
+    st.markdown("Streamlit • yt-dlp")
 
 def is_valid_youtube_url(url):
     youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
     return bool(re.match(youtube_regex, url))
 
-def get_video_info(url, max_retries=3):
-    for attempt in range(max_retries):
+def get_video_info(url):
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            # Custom headers to mimic a browser
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-            }
-            
-            yt = YouTube(
-                url,
-                use_oauth=False,
-                allow_oauth_cache=True
-            )
-            
-            # Set custom headers
-            yt.headers = headers
-            
-            # Add a small random delay
-            time.sleep(random.uniform(1, 3))
-            
-            return yt
+            info = ydl.extract_info(url, download=False)
+            return info
         except Exception as e:
-            if attempt < max_retries - 1:
-                st.warning(f"Attempt {attempt + 1} failed, retrying...")
-                time.sleep(3)  # Wait 3 seconds before retrying
-                continue
-            raise e
+            raise Exception(f"Error getting video info: {str(e)}")
+
+def download_video(url, format_type, quality=None):
+    ydl_opts = {
+        'format': 'best' if format_type == 'audio' else f'bestvideo[height<={quality}]+bestaudio/best[height<={quality}]' if quality else 'best',
+        'quiet': True,
+        'no_warnings': True,
+        'outtmpl': '%(title)s.%(ext)s',
+    }
+    
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        try:
+            info = ydl.extract_info(url, download=True)
+            return f"{info['title']}.{info['ext']}"
+        except Exception as e:
+            raise Exception(f"Error downloading video: {str(e)}")
 
 # Main function
 def main():
@@ -101,19 +98,19 @@ def main():
 
         try:
             with st.spinner("Connecting to YouTube..."):
-                yt = get_video_info(url)
+                info = get_video_info(url)
                 
                 # Display video information
                 col1, col2 = st.columns([1, 2])
                 
                 with col1:
-                    st.image(yt.thumbnail_url, width=300)
+                    st.image(info.get('thumbnail', ''), width=300)
                 
                 with col2:
-                    st.subheader(yt.title)
-                    st.markdown(f"**Author:** {yt.author}")
-                    st.markdown(f"**Duration:** {datetime.timedelta(seconds=yt.length)}")
-                    st.markdown(f"**Views:** {yt.views:,}")
+                    st.subheader(info.get('title', 'Unknown Title'))
+                    st.markdown(f"**Author:** {info.get('uploader', 'Unknown')}")
+                    st.markdown(f"**Duration:** {datetime.timedelta(seconds=info.get('duration', 0))}")
+                    st.markdown(f"**Views:** {info.get('view_count', 0):,}")
                     
                     # Download options
                     st.markdown("### Download Options")
@@ -124,28 +121,18 @@ def main():
                     
                     if download_type == "Video":
                         # Quality selection
-                        streams = yt.streams.filter(progressive=True)
-                        if not streams:
-                            st.error("No video streams available for this video")
-                            return
-                            
-                        quality_options = {f"{s.resolution} ({s.filesize_mb:.1f} MB)": s for s in streams}
-                        selected_quality = st.selectbox(
+                        quality = st.selectbox(
                             "Choose quality:",
-                            options=list(quality_options.keys())
+                            ["720p", "480p", "360p", "240p", "144p"]
                         )
-                        stream = quality_options[selected_quality]
+                        quality = int(quality.replace('p', ''))
                     else:
-                        # Audio download
-                        stream = yt.streams.get_audio_only()
-                        if not stream:
-                            st.error("No audio stream available for this video")
-                            return
+                        quality = None
                     
                     if st.button("Download"):
                         try:
                             with st.spinner("Downloading..."):
-                                download_path = stream.download()
+                                download_path = download_video(url, download_type.lower(), quality)
                                 st.success("Download complete!")
                                 
                                 # Download button
@@ -164,7 +151,7 @@ def main():
         
         except Exception as e:
             st.error(f"Error: {str(e)}")
-            st.info("If you're seeing a 'Bad Request' error, please try again in a few minutes. YouTube may be temporarily blocking the request.")
+            st.info("If you're seeing an error, please try again in a few minutes.")
 
 if __name__ == "__main__":
     main() 
